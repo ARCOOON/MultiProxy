@@ -21,10 +21,11 @@ This shell is separate from the proxy process; run it from
 `Firewall` and `FirewallConfig` plugins.  When the shell starts it
 looks up these plugins via the manager passed to its constructor.
 """
+
 from __future__ import annotations
 
 import shlex
-from typing import List, Optional
+from typing import Callable, List
 
 from ..plugin_base import BasePlugin, HTTPRequest
 
@@ -34,7 +35,7 @@ class FirewallShell(BasePlugin):
     version = "1.0.0"
     description = "Cisco‑style CLI for configuring the firewall"
 
-    def __init__(self, manager):
+    def __init__(self, manager) -> None:
         super().__init__(manager)
         self.firewall = None
         self.config = None
@@ -51,7 +52,7 @@ class FirewallShell(BasePlugin):
         if self.firewall is None:
             raise RuntimeError("FirewallShell requires the Firewall plugin")
 
-    def get_commands(self):
+    def get_commands(self) -> dict[str, Callable[..., str]]:
         # Expose a 'shell' command that runs the interactive loop
         return {
             "shell": self._cmd_shell,
@@ -65,8 +66,10 @@ class FirewallShell(BasePlugin):
     # Shell implementation
     def start_shell(self) -> None:
         self._running = True
+
         print("Entering firewall shell.  Type 'help' for assistance.  Ctrl+C to exit.")
         mode = "exec"  # exec vs config
+
         while self._running:
             try:
                 prompt = "(config)# " if mode == "config" else "# "
@@ -74,11 +77,14 @@ class FirewallShell(BasePlugin):
             except (EOFError, KeyboardInterrupt):
                 print("\nExiting shell.")
                 break
+
             if not line.strip():
                 continue
+
             tokens = shlex.split(line)
             cmd = tokens[0].lower()
             args = tokens[1:]
+
             if mode == "exec":
                 if cmd in ("help", "?"):
                     self._print_help()
@@ -103,19 +109,21 @@ class FirewallShell(BasePlugin):
                     print("Leaving configuration mode.")
                 elif cmd == "rule":
                     self._handle_rule(args)
+                elif cmd in ("show",):
+                    self._handle_show(args)
                 else:
                     print(f"Unknown config command: {cmd}")
 
     # Exec‑mode handlers
     def _print_help(self) -> None:
         print("Available commands:")
-        print("  show firewall rules        - Display current firewall rules")
+        print("  show rules                 - Display current firewall rules")
         print("  configure terminal         - Enter configuration mode")
         print("  write memory               - Save rules to config file")
         print("  help                       - Show this help message")
 
     def _handle_show(self, args: List[str]) -> None:
-        if args[:2] == ["firewall", "rules"]:
+        if args[:1] == ["rules"]:
             if self.firewall:
                 rules = self.firewall.get_rules()
                 if not rules:
@@ -127,7 +135,7 @@ class FirewallShell(BasePlugin):
             else:
                 print("Firewall plugin not loaded")
         else:
-            print("Usage: show firewall rules")
+            print("Usage: show rules")
 
     def _handle_write(self) -> None:
         if self.config:
@@ -139,7 +147,7 @@ class FirewallShell(BasePlugin):
     # Config‑mode handlers
     def _handle_rule(self, args: List[str]) -> None:
         if not args:
-            print("Usage: rule add|del …")
+            print("Usage: rule add|del|show ...")
             return
         subcmd = args[0]
         if subcmd == "add":
@@ -147,7 +155,9 @@ class FirewallShell(BasePlugin):
             params = {}
             # action is required as first positional argument after 'add'
             if len(args) < 2:
-                print("Usage: rule add <allow|deny> [ip=…] [method=…] [host=…] [path=…]")
+                print(
+                    "Usage: rule add <allow|deny> [ip=...] [method=...] [host=...] [path=...]"
+                )
                 return
             action = args[1].lower()
             if action not in ("allow", "deny"):
