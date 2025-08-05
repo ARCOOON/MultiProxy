@@ -1,0 +1,15 @@
+---
+# Example firewall configuration file
+rules:
+  # Deny requests from the 10.0.0.0/8 private network
+  - action: deny
+    ip: "10.0.0.0/8"
+    description: "Block internal network"
+
+  # Allow GET requests to the /public path
+  - action: allow
+    method: GET
+    path: "/public"
+    description: "Allow GET /public"
+
+  # Default action: implicitly allow all other traffic
