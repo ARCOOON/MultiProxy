@@ -25,7 +25,7 @@ looks up these plugins via the manager passed to its constructor.
 from __future__ import annotations
 
 import shlex
-from typing import Callable, List
+from typing import Callable, Dict, List
 
 from ..plugin_base import BasePlugin, HTTPRequest
 
@@ -121,6 +121,17 @@ class FirewallShell(BasePlugin):
         print("  configure terminal         - Enter configuration mode")
         print("  write memory               - Save rules to config file")
         print("  help                       - Show this help message")
+        print("\nConfiguration mode commands:")
+        print("  rule add <allow|deny> [key=value ...]  - Add a rule")
+        print("    Supported keys:")
+        print(
+            "      src_ip, dst_ip, src_port, dst_port, domain, protocol, method, path, description"
+        )
+        print(
+            "      (aliases: src, source, ip, dst, dest, destination, sport, source_port, port, dest_port, host)"
+        )
+        print("  rule del <index>                        - Delete rule by index")
+        print("  rule show <index>                       - Show a single rule")
 
     def _handle_show(self, args: List[str]) -> None:
         if args[:1] == ["rules"]:
@@ -147,49 +158,109 @@ class FirewallShell(BasePlugin):
     # Config‑mode handlers
     def _handle_rule(self, args: List[str]) -> None:
         if not args:
-            print("Usage: rule add|del|show ...")
+            print(
+                "Usage: rule add <allow|deny> [key=value ...]\n"
+                "       rule del <index>\n"
+                "       rule show <index>"
+            )
             return
-        subcmd = args[0]
+
+        subcmd = args[0].lower()
         if subcmd == "add":
-            # parse rule parameters
-            params = {}
-            # action is required as first positional argument after 'add'
             if len(args) < 2:
                 print(
-                    "Usage: rule add <allow|deny> [ip=...] [method=...] [host=...] [path=...]"
+                    "Usage: rule add <allow|deny> key=value ... "
+                    "(see 'help' for supported keys)"
                 )
                 return
+
             action = args[1].lower()
             if action not in ("allow", "deny"):
                 print("Action must be 'allow' or 'deny'")
                 return
-            params["action"] = action
-            # Remaining args are key=value pairs
+
+            params: Dict[str, str] = {"action": action}
+            # Aliases for parameter names
+            alias_map = {
+                "src": "src_ip",
+                "source": "src_ip",
+                "ip": "src_ip",
+                "src_ip": "src_ip",
+                "dst": "dst_ip",
+                "dest": "dst_ip",
+                "destination": "dst_ip",
+                "dst_ip": "dst_ip",
+                "sport": "src_port",
+                "source_port": "src_port",
+                "src_port": "src_port",
+                "port": "dst_port",
+                "dest_port": "dst_port",
+                "dst_port": "dst_port",
+                "proto": "protocol",
+                "protocol": "protocol",
+                "host": "domain",
+                "domain": "domain",
+                "method": "method",
+                "path": "path",
+                "desc": "description",
+                "description": "description",
+            }
+
             for token in args[2:]:
                 if "=" not in token:
                     print(f"Ignoring invalid token: {token}")
                     continue
+
                 key, value = token.split("=", 1)
-                params[key] = value
-            # Add rule to firewall
+                norm_key = alias_map.get(key.lower())
+
+                if not norm_key:
+                    print(f"Unknown key: {key}")
+                    continue
+
+                # Remove surrounding quotes if present
+                if value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]
+                params[norm_key] = value
+
             if self.firewall:
                 self.firewall.add_rule(params)
-                print("Rule added.")
+                print(f"Rule added: {params}")
             else:
                 print("Firewall plugin not loaded")
-        elif subcmd in ("del", "remove"):  # remove rule by index
+        elif subcmd in ("del", "remove"):
             if len(args) < 2 or not args[1].isdigit():
                 print("Usage: rule del <index>")
                 return
+
             idx = int(args[1])
+
             if self.firewall:
-                if 0 <= idx < len(self.firewall.get_rules()):
+                rules = self.firewall.get_rules()
+                if 0 <= idx < len(rules):
                     self.firewall.remove_rule(idx)
                     print(f"Removed rule {idx}.")
                 else:
                     print("Index out of range")
             else:
                 print("Firewall plugin not loaded")
+        elif subcmd == "show":
+            if len(args) < 2 or not args[1].isdigit():
+                print("Usage: rule show <index>")
+                return
+
+            idx = int(args[1])
+
+            if self.firewall:
+                rules = self.firewall.get_rules()
+                if 0 <= idx < len(rules):
+                    rule = rules[idx]
+                    print(f"{idx}: " + ", ".join(f"{k}={v}" for k, v in rule.items()))
+                else:
+                    print("Index out of range")
+            else:
+                print("Firewall plugin not loaded")
+
         else:
             print(f"Unknown rule subcommand: {subcmd}")
 
