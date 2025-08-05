@@ -8,7 +8,7 @@ This repository contains a modular HTTP proxy server built with Python 3.12. It
 - **Enterprise firewall** – The `Firewall` plugin allows you to define granular rules to allow or block requests based on client IP addresses, HTTP methods, hosts or URL paths. The default behaviour is to permit all traffic unless a matching deny rule is encountered.
 - **Persistent configuration** – The `FirewallConfig` plugin builds on top of the firewall to load and save rule sets to a YAML file. Administrators can persist their policies across restarts and version control them along with other infrastructure code.
 - **Interactive shell** – The `FirewallShell` plugin offers a command‑line interface that emulates the feel of Cisco networking equipment. Operators can show, add, delete and reorder rules using commands such as `show firewall rules`, `config terminal`, `rule add …` etc. The shell runs as a separate process that connects to the proxy via the plugin manager.
-- - **Asynchronous HTTP(S) proxy** supporting:
+- **Asynchronous HTTP(S) proxy** supporting:
   * Full HTTP/1.1 proxying with request/response hooks via plugins
   * **HTTPS** & **generic TCP/IP** tunneling via `CONNECT`
   * **WebSocket** upgrade detection & raw frame proxying
