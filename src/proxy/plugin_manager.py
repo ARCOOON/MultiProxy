@@ -36,15 +36,20 @@ class PluginManager:
         import pkgutil
 
         package = "proxy.plugins"
-        package_obj = __import__(package, fromlist=['*'])
-        for _, module_name, _ in pkgutil.iter_modules(package_obj.__path__, package + "."):
-            module = importlib.import_module(module_name)
-            if hasattr(module, "Plugin"):
-                cls = getattr(module, "Plugin")
-                if not issubclass(cls, BasePlugin):
-                    continue
-                instance = cls(self)
-                self.register_plugin(instance)
+        package_obj = __import__(package, fromlist=["*"])
+        for _, module_name, _ in pkgutil.iter_modules(
+            package_obj.__path__, package + "."
+        ):
+            try:
+                module = importlib.import_module(module_name)
+                if hasattr(module, "Plugin"):
+                    cls = getattr(module, "Plugin")
+                    if not issubclass(cls, BasePlugin):
+                        continue
+                    instance = cls(self)
+                    self.register_plugin(instance)
+            except Exception as exc:
+                print(f"Failed to load plugin {module_name}: {exc}")
 
     def load_external_plugins(self, path: str) -> None:
         """Load plugins from an external directory.
@@ -143,4 +148,8 @@ class PluginManager:
         func = self.command_registry.get(cmd)
         if func is None:
             return f"Unknown command: {cmd}"
-        return func(args)
+        try:
+            return func(args)
+        except Exception as exc:
+            return f"Error executing {cmd}: {exc}"
+
