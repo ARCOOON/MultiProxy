@@ -312,9 +312,11 @@ class ProxyServer:
         server = await asyncio.start_server(
             self.handle_client, self.listen_host, self.listen_port
         )
-        addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
+        # addrs = ", ".join(str(sock.getsockname()) for sock in server.sockets)
 
-        print(f"Proxy listening on {addrs}")
+        print("Proxy listening on {}:{}".format(
+            *server.sockets[0].getsockname()
+        ))
 
         async with server:
             try:
