@@ -48,11 +48,18 @@ MultiProxy/
 
 2. **Run the proxy server**
 
-   Start the proxy on port 8080 (or any port of your choosing) with:
+    Start the proxy on port 8080 (or any port of your choosing) with:
 
-   ```bash
-   python -m proxy.server --listen 0.0.0.0:8080
-   ```
+    ```bash
+    python -m proxy.server --listen 0.0.0.0:8080
+    ```
+
+    A convenience wrapper is also provided so the server can be launched
+    directly from the repository root:
+
+    ```bash
+    python main.py --listen 0.0.0.0:8080
+    ```
 
    You can then configure your web browser or application to use `http://localhost:8080` as its HTTP proxy. Note that HTTPS tunnelling (`CONNECT`) is not implemented for brevity.
 
@@ -72,7 +79,28 @@ MultiProxy/
 
 4. **Extending the proxy**
 
-   Read the documentation in `docs/plugin_system.md` to learn how to implement your own plugins. By placing additional modules into a `plugins` directory and exporting a `Plugin` class, your custom logic will be loaded automatically at startup.
+    Read the documentation in `docs/plugin_system.md` to learn how to implement your own plugins. By placing additional modules into a `plugins` directory and exporting a `Plugin` class, your custom logic will be loaded automatically at startup.
+
+## Using as a Library
+
+The proxy server can also be embedded into your own applications.  Add the
+`src` directory to `PYTHONPATH` (or run your script from the repository root so
+`main.py` can adjust it for you) and import `ProxyServer`:
+
+```python
+import asyncio
+from proxy import ProxyServer
+
+async def start():
+    server = ProxyServer("127.0.0.1", 8080, plugins_dir="./my_plugins")
+    await server.run()
+
+if __name__ == "__main__":
+    asyncio.run(start())
+```
+
+This approach allows you to customise the server instance, specify different
+plugin directories or integrate it with other components within your program.
 
 ## Support
 
