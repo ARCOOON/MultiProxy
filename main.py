@@ -12,10 +12,10 @@ import sys
 from pathlib import Path
 
 # Add the src directory to sys.path to make ``proxy`` importable
-ROOT = Path(__file__).resolve().parent
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+root = Path(__file__).resolve().parent
+src = root / "src"
+if str(src) not in sys.path:
+    sys.path.insert(0, str(src))
 
 from proxy.server import main as run_server  # noqa: E402
 
