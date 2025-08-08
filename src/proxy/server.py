@@ -34,6 +34,7 @@ import argparse
 import re
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
+from urllib.parse import urlsplit
 
 from .plugin_manager import PluginManager
 
@@ -233,15 +234,16 @@ class ProxyServer:
 
     @staticmethod
     def parse_host(host_header: str) -> Tuple[str, int]:
-        # Parse host header into host and port
-        if ":" in host_header:
-            host, port_str = host_header.split(":", 1)
-            try:
-                port = int(port_str)
-            except ValueError:
-                port = 80
-        else:
-            host, port = host_header, 80
+        """Parse a Host header into host and port.
+
+        The previous implementation naïvely split on the first colon which
+        broke for IPv6 addresses like ``[2001:db8::1]:8080`` because the
+        embedded colons were treated as port separators.  Using ``urlsplit``
+        handles IPv6 literals and optional ports correctly.
+        """
+        result = urlsplit(f"//{host_header}")
+        host = result.hostname or host_header
+        port = result.port or 80
         return host, port
 
     @staticmethod

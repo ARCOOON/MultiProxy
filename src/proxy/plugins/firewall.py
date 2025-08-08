@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import ipaddress
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlsplit
 
 from ..plugin_base import BasePlugin, HTTPRequest
 
@@ -88,12 +89,9 @@ class Firewall(BasePlugin):
         dest_port: int = 80
 
         if host_header:
-            dest_host = host_header.split(":")[0]
-            if ":" in host_header:
-                try:
-                    dest_port = int(host_header.rsplit(":", 1)[1])
-                except ValueError:
-                    dest_port = 80
+            parsed = urlsplit(f"//{host_header}")
+            dest_host = parsed.hostname
+            dest_port = parsed.port or 80
 
         # Determine protocol: CONNECT implies raw TCP; otherwise HTTP
         req_protocol = "tcp" if request.method.upper() == "CONNECT" else "http"
