@@ -5,6 +5,10 @@ description = "Asynchronous HTTP(S) proxy server with a modular plugin system"
 readme = "README.md"
 requires-python = ">=3.12"
 
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 # Core dependencies
 dependencies = [
     # needed by the FirewallConfig plugin
