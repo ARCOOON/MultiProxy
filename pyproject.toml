@@ -1,9 +1,4 @@
-[build-system]
-requires = ["setuptools>=61", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
-# Package metadata
 name = "multiproxy"
 version = "0.1.0"
 description = "Asynchronous HTTP(S) proxy server with a modular plugin system"
@@ -12,15 +7,10 @@ requires-python = ">=3.12"
 
 # Core dependencies
 dependencies = [
-    "PyYAML>=5.4",       # needed by the FirewallConfig plugin
-    "uvloop",            # uvloop is optional; install manually for faster event loop performance
-]
-
-# Optional extras (e.g. development/testing tools)
-[project.optional-dependencies]
-dev = [
-    "ruff",
-    "flake8>=6.0",
+    # needed by the FirewallConfig plugin
+    "PyYAML>=5.4",
+    # uvloop is optional; install for faster event loop performance
+    "uvloop>=0.21.0; sys_platform == 'linux'",
 ]
 
 # CLI entry points
