@@ -35,6 +35,11 @@ import re
 from typing import Dict, Optional, Tuple
 from urllib.parse import urlsplit
 
+try:
+    import uvloop  # optional
+except ImportError:
+    uvloop = None
+
 from .plugin_manager import PluginManager
 
 
@@ -66,19 +71,21 @@ class HTTPRequest:
 
 
 class ProxyServer:
-    def __init__(
-        self, listen_host: str, listen_port: int, plugins_dir: Optional[str] = None
-    ) -> None:
+    def __init__(self, listen_host: str, listen_port: int, plugins_dir: Optional[str] = None) -> None:
         self.listen_host = listen_host
         self.listen_port = listen_port
         self.manager = PluginManager()
-
-        # Load built‑in plugins
         self.manager.load_builtin_plugins()
-
-        # Load external plugins if provided
         if plugins_dir:
             self.manager.load_external_plugins(plugins_dir)
+
+        # upstream connection pool: (ip, port) -> list[(reader, writer)]
+        self._pool: dict[tuple[str, int], list[tuple[asyncio.StreamReader, asyncio.StreamWriter]]] = {}
+        # DNS cache: host -> (ip, expiry)
+        self._dns: dict[str, tuple[str, float]] = {}
+
+        if uvloop:
+            asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
     async def handle_client(
         self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
