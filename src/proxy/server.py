@@ -32,24 +32,34 @@ from __future__ import annotations
 import asyncio
 import argparse
 import re
-from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 from urllib.parse import urlsplit
 
 from .plugin_manager import PluginManager
 
 
-@dataclass
 class HTTPRequest:
-    """Represents a parsed HTTP/1.1 request."""
+    """Parsed HTTP/1.x request (single exchange)."""
 
-    raw: bytes
-    method: str
-    path: str
-    version: str
-    headers: Dict[str, str]
-    body: bytes
-    client: Tuple[str, int]
+    __slots__ = ("raw", "method", "path", "version", "headers", "body", "client")
+
+    def __init__(
+        self,
+        raw: bytes,
+        method: str,
+        path: str,
+        version: str,
+        headers: Dict[str, str],
+        body: bytes,
+        client: Tuple[str, int],
+    ):
+        self.raw = raw
+        self.method = method
+        self.path = path
+        self.version = version
+        self.headers = headers
+        self.body = body
+        self.client = client
 
     def header(self, name: str) -> Optional[str]:
         return self.headers.get(name.lower())
