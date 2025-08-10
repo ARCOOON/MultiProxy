@@ -1,8 +1,8 @@
-# dynamic_pac_server.py
+# pac_server.py
 import ipaddress
 import http.server
 import socketserver
-from typing import List, Dict, Tuple
+from typing import List, Dict
 
 # Define your routing rules here
 CONFIG: Dict[str, List] = {
@@ -81,12 +81,13 @@ class PACHandler(http.server.BaseHTTPRequestHandler):
         else:
             self.send_error(404, "Not Found")
 
-    def log_message(self, *args):
-        pass
+    # def log_message(self, *args):
+    #     # Disable logging
+    #     pass
 
 def main():
-    with socketserver.ThreadingTCPServer(("0.0.0.0", 8000), PACHandler) as httpd:
-        print("Serving dynamic PAC file at http://<server-ip>:8000/proxy.pac")
+    with socketserver.ThreadingTCPServer(("0.0.0.0", 3128), PACHandler) as httpd:
+        print("Serving dynamic PAC file at http://0.0.0.0:3128/proxy.pac")
         httpd.serve_forever()
 
 if __name__ == "__main__":
